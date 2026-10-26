@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniConvert - 100% Private Client-Side File Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- pdf-lib CDN for client-side PDF manipulation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <style>
+        .drag-active {
+            border-color: #22c55e !important;
+            background-color: rgba(34, 197, 94, 0.05) !important;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+    <!-- Navigation Header -->
+    <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-500/10 p-2.5 rounded-xl border border-brand-500/20 text-brand-500">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-xl tracking-tight text-white">OmniConvert</span>
+                    <span class="text-xs text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-full ml-2 border border-brand-500/20 font-medium">Client-Side</span>
+                </div>
+            </div>
+            
+            <!-- Security Badge -->
+            <div class="hidden md:flex items-center gap-2 bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-medium">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>100% Private — Files never leave your device</span>
+            </div>
+
+            <button id="themeToggle" class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
+                <i class="fa-solid fa-sun text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Top Ad Banner Placeholder -->
+    <div class="max-w-7xl mx-auto w-full px-4 pt-4">
+        <div class="bg-gray-800/50 border border-dashed border-gray-700 rounded-xl p-3 text-center text-xs text-gray-500 flex flex-col items-center justify-center min-h-[90px]">
+            <span class="uppercase font-semibold tracking-wider text-[10px] text-gray-600 mb-1">Advertisement</span>
+            <div id="adsense-top">
+                <!-- AdSense Script Tag goes here -->
+                <p class="text-gray-500">[ Ad Space - Responsive Leaderboard Banner ]</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
+
+        <!-- Hero Title -->
+        <div class="text-center space-y-3">
+            <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+                Convert Any File <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-emerald-300">Instantly & Privately</span>
+            </h1>
+            <p class="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
+                Images, Audio, and PDFs converted directly inside your browser. High speed, unlimited conversions, and complete data privacy.
+            </p>
+        </div>
+
+        <!-- Drag & Drop Upload Zone -->
+        <div id="dropZone" class="border-2 border-dashed border-gray-700 bg-gray-800/40 hover:bg-gray-800/70 hover:border-gray-500 transition-all duration-200 rounded-2xl p-8 sm:p-12 text-center cursor-pointer relative group">
+            <input type="file" id="fileInput" multiple class="hidden" accept="image/*,audio/*,video/*,application/pdf">
+            
+            <div class="flex flex-col items-center gap-4 pointer-events-none">
+                <div class="w-16 h-16 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-200 border border-brand-500/20">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-semibold text-white">Drag and drop your files here</p>
+                    <p class="text-sm text-gray-400 mt-1">or <span class="text-brand-500 font-medium">browse from your computer</span></p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2 mt-2 text-xs text-gray-500">
+                    <span class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded-md">PNG, JPG, WEBP</span>
+                    <span class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded-md">MP4 to MP3</span>
+                    <span class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded-md">PDF Tools</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Control Bar (Visible when files loaded) -->
+        <div id="globalControls" class="hidden bg-gray-800/80 border border-gray-700 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <span id="fileCountBadge" class="bg-brand-500/10 text-brand-500 border border-brand-500/20 font-bold px-3 py-1 rounded-lg text-sm">
+                    0 Files
+                </span>
+                <button id="clearAllBtn" class="text-xs text-red-400 hover:text-red-300 font-medium transition-colors">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Clear All
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <button id="convertAllBtn" class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-gray-950 font-bold px-6 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-gear"></i> Convert All
+                </button>
+                <button id="pdfMergeBtn" class="hidden w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-pdf"></i> Merge PDFs
+                </button>
+            </div>
+        </div>
+
+        <!-- File List / Conversion Queue -->
+        <div id="fileList" class="flex flex-col gap-3">
+            <!-- Dynamic File Items Injected Here -->
+        </div>
+
+    </main>
+
+    <!-- Side/Bottom Ad Placement -->
+    <div class="max-w-7xl mx-auto w-full px-4 mb-8">
+        <div class="bg-gray-800/50 border border-dashed border-gray-700 rounded-xl p-3 text-center text-xs text-gray-500 flex flex-col items-center justify-center min-h-[120px]">
+            <span class="uppercase font-semibold tracking-wider text-[10px] text-gray-600 mb-1">Advertisement</span>
+            <div id="adsense-bottom">
+                <p class="text-gray-500">[ Ad Space - Horizontal Display Banner ]</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 py-6 text-center text-xs text-gray-500 bg-gray-900 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 OmniConvert. All processing happens locally on your device via Client-Side Web APIs.</p>
+            <div class="flex gap-4">
+                <a href="#" class="hover:text-gray-300 transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-gray-300 transition-colors">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State Management
+        let filesQueue = [];
+
+        // DOM Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const globalControls = document.getElementById('globalControls');
+        const fileCountBadge = document.getElementById('fileCountBadge');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const convertAllBtn = document.getElementById('convertAllBtn');
+        const pdfMergeBtn = document.getElementById('pdfMergeBtn');
+
+        // Drag and Drop Event Handlers
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-active');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-active');
+            }, false);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            handleFiles(dt.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Add Files to Queue
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                const fileObj = {
+                    id: Math.random().toString(36).substring(2, 9),
+                    file: file,
+                    targetFormat: getDefaultTargetFormat(file.type),
+                    status: 'pending', // pending, converting, completed, error
+                    resultBlob: null,
+                    resultName: null
+                };
+                filesQueue.push(fileObj);
+            });
+            updateUI();
+        }
+
+        // Determine default target output format based on MIME type
+        function getDefaultTargetFormat(mimeType) {
+            if (mimeType.startsWith('image/')) {
+                return mimeType === 'image/jpeg' ? 'png' : 'jpg';
+            } else if (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) {
+                return 'mp3';
+            } else if (mimeType === 'application/pdf') {
+                return 'merge';
+            }
+            return 'png';
+        }
+
+        // Update UI View
+        function updateUI() {
+            fileList.innerHTML = '';
+
+            if (filesQueue.length === 0) {
+                globalControls.classList.add('hidden');
+                return;
+            }
+
+            globalControls.classList.remove('hidden');
+            fileCountBadge.textContent = `${filesQueue.length} ${filesQueue.length === 1 ? 'File' : 'Files'}`;
+
+            // Check if multiple PDFs exist for Merge option
+            const pdfCount = filesQueue.filter(f => f.file.type === 'application/pdf').length;
+            if (pdfCount > 1) {
+                pdfMergeBtn.classList.remove('hidden');
+            } else {
+                pdfMergeBtn.classList.add('hidden');
+            }
+
+            filesQueue.forEach((item, index) => {
+                const fileCard = document.createElement('div');
+                fileCard.className = 'bg-gray-800 border border-gray-700/70 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all hover:border-gray-600';
+                
+                // Icon based on type
+                let iconClass = 'fa-file';
+                if (item.file.type.startsWith('image/')) iconClass = 'fa-file-image text-emerald-400';
+                else if (item.file.type.startsWith('audio/')) iconClass = 'fa-file-audio text-purple-400';
+                else if (item.file.type.startsWith('video/')) iconClass = 'fa-file-video text-blue-400';
+                else if (item.file.type === 'application/pdf') iconClass = 'fa-file-pdf text-red-400';
+
+                const fileSizeMB = (item.file.size / (1024 * 1024)).toFixed(2);
+
+                fileCard.innerHTML = `
+                    <div class="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                        <div class="text-2xl min-w-[32px] text-center">
+                            <i class="fa-solid ${iconClass}"></i>
+                        </div>
+                        <div class="truncate">
+                            <p class="text-sm font-semibold text-white truncate max-w-xs sm:max-w-md">${item.file.name}</p>
+                            <p class="text-xs text-gray-400">${fileSizeMB} MB</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <!-- Format Selection -->
+                        ${item.status === 'pending' ? `
+                            <select onchange="updateTargetFormat('${item.id}', this.value)" class="bg-gray-900 border border-gray-700 text-gray-200 text-xs rounded-lg px-2.5 py-1.5 focus:border-brand-500 focus:outline-none">
+                                ${getAvailableFormats(item.file.type, item.targetFormat)}
+                            </select>
+                        ` : ''}
+
+                        <!-- Status / Actions -->
+                        <div class="flex items-center gap-2">
+                            ${renderStatusBadge(item)}
+                            
+                            <button onclick="removeFile('${item.id}')" class="text-gray-500 hover:text-red-400 p-1.5 rounded-lg transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                fileList.appendChild(fileCard);
+            });
+        }
+
+        // Available output formats renderer
+        function getAvailableFormats(mimeType, currentSelected) {
+            let options = [];
+            if (mimeType.startsWith('image/')) {
+                options = ['jpg', 'png', 'webp', 'pdf'];
+            } else if (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) {
+                options = ['mp3', 'wav'];
+            } else if (mimeType === 'application/pdf') {
+                options = ['pdf'];
+            } else {
+                options = ['png'];
+            }
+
+            return options.map(opt => `<option value="${opt}" ${opt === currentSelected ? 'selected' : ''}>To .${opt.toUpperCase()}</option>`).join('');
+        }
+
+        // Render Status Button/Badge
+        function renderStatusBadge(item) {
+            if (item.status === 'pending') {
+                return `<button onclick="convertSingleFile('${item.id}')" class="bg-gray-700 hover:bg-brand-500 hover:text-gray-950 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors">
+                    Convert
+                </button>`;
+            } else if (item.status === 'converting') {
+                return `<span class="text-xs text-brand-500 flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-spinner animate-spin"></i> Converting...
+                </span>`;
+            } else if (item.status === 'completed') {
+                return `<button onclick="downloadResult('${item.id}')" class="bg-brand-500 hover:bg-brand-600 text-gray-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-download"></i> Download
+                </button>`;
+            } else if (item.status === 'error') {
+                return `<span class="text-xs text-red-400 font-medium">Error</span>`;
+            }
+        }
+
+        // Actions
+        window.updateTargetFormat = (id, format) => {
+            const item = filesQueue.find(f => f.id === id);
+            if (item) item.targetFormat = format;
+        };
+
+        window.removeFile = (id) => {
+            filesQueue = filesQueue.filter(f => f.id !== id);
+            updateUI();
+        };
+
+        clearAllBtn.addEventListener('click', () => {
+            filesQueue = [];
+            updateUI();
+        });
+
+        // Conversion Engine Routing
+        async function processFile(item) {
+            item.status = 'converting';
+            updateUI();
+
+            try {
+                if (item.file.type.startsWith('image/')) {
+                    if (item.targetFormat === 'pdf') {
+                        await convertImageToPDF(item);
+                    } else {
+                        await convertImage(item);
+                    }
+                } else if (item.file.type.startsWith('audio/') || item.file.type.startsWith('video/')) {
+                    await convertMediaToAudio(item);
+                } else {
+                    throw new Error("Unsupported format");
+                }
+                item.status = 'completed';
+            } catch (err) {
+                console.error(err);
+                item.status = 'error';
+            }
+            updateUI();
+        }
+
+        window.convertSingleFile = (id) => {
+            const item = filesQueue.find(f => f.id === id);
+            if (item) processFile(item);
+        };
+
+        convertAllBtn.addEventListener('click', () => {
+            filesQueue.forEach(item => {
+                if (item.status === 'pending') processFile(item);
+            });
+        });
+
+        // Image Conversion Engine (Canvas API)
+        function convertImage(item) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+
+                        let mime = 'image/jpeg';
+                        if (item.targetFormat === 'png') mime = 'image/png';
+                        if (item.targetFormat === 'webp') mime = 'image/webp';
+
+                        canvas.toBlob((blob) => {
+                            if (!blob) {
+                                reject('Canvas export failed');
+                                return;
+                            }
+                            item.resultBlob = blob;
+                            item.resultName = `${item.file.name.substring(0, item.file.name.lastIndexOf('.'))}.${item.targetFormat}`;
+                            resolve();
+                        }, mime, 0.9);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(item.file);
+            });
+        }
+
+        // Image to PDF Conversion (pdf-lib)
+        async function convertImageToPDF(item) {
+            const arrayBuffer = await item.file.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            let image;
+
+            if (item.file.type === 'image/png') {
+                image = await pdfDoc.embedPng(arrayBuffer);
+            } else {
+                image = await pdfDoc.embedJpg(arrayBuffer);
+            }
+
+            const page = pdfDoc.addPage([image.width, image.height]);
+            page.drawImage(image, {
+                x: 0,
+                y: 0,
+                width: image.width,
+                height: image.height,
+            });
+
+            const pdfBytes = await pdfDoc.save();
+            item.resultBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+            item.resultName = `${item.file.name.substring(0, item.file.name.lastIndexOf('.'))}.pdf`;
+        }
+
+        // Client-Side Audio Extraction (Web Audio API)
+        async function convertMediaToAudio(item) {
+            const arrayBuffer = await item.file.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+            // Encode AudioBuffer to WAV format client-side
+            const wavBlob = bufferToWave(audioBuffer, audioBuffer.length);
+            item.resultBlob = wavBlob;
+            item.resultName = `${item.file.name.substring(0, item.file.name.lastIndexOf('.'))}.${item.targetFormat}`;
+        }
+
+        // Convert AudioBuffer to WAV Blob
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                buffer = new ArrayBuffer(length),
+                view = new DataView(buffer),
+                channels = [], i, sample,
+                offset = 0,
+                pos = 0;
+
+            function setUint16(data) {
+                view.setUint16(pos, data, true);
+                pos += 2;
+            }
+
+            function setUint32(data) {
+                view.setUint32(pos, data, true);
+                pos += 4;
+            }
+
+            setUint32(0x46464952);                         // "RIFF"
+            setUint32(length - 8);                         // file length - 8
+            setUint32(0x45564157);                         // "WAVE"
+            setUint32(0x20746d66);                         // "fmt " chunk
+            setUint32(16);                                 // length = 16
+            setUint16(1);                                  // PCM (uncompressed)
+            setUint16(numOfChan);
+            setUint32(abuffer.sampleRate);
+            setUint32(abuffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+            setUint16(numOfChan * 2);                      // block-align
+            setUint16(16);                                 // 16-bit
+            setUint32(0x61746164);                         // "data" chunk
+            setUint32(length - pos - 4);                   // chunk length
+
+            for (i = 0; i < abuffer.numberOfChannels; i++)
+                channels.push(abuffer.getChannelData(i));
+
+            while (pos < length) {
+                for (i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                    view.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+
+            return new Blob([buffer], { type: "audio/wav" });
+        }
+
+        // PDF Merge Action
+        pdfMergeBtn.addEventListener('click', async () => {
+            const pdfFiles = filesQueue.filter(f => f.file.type === 'application/pdf');
+            if (pdfFiles.length < 2) return;
+
+            const mergedPdf = await PDFLib.PDFDocument.create();
+
+            for (const item of pdfFiles) {
+                const arrayBuffer = await item.file.arrayBuffer();
+                const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                copiedPages.forEach((page) => mergedPdf.addPage(page));
+            }
+
+            const pdfBytes = await mergedPdf.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            
+            // Trigger Direct Download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'merged_document.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Trigger Download
+        window.downloadResult = (id) => {
+            const item = filesQueue.find(f => f.id === id);
+            if (!item || !item.resultBlob) return;
+
+            const url = URL.createObjectURL(item.resultBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = item.resultName;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    </script>
+</body>
+</html>
